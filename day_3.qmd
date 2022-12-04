@@ -1,0 +1,155 @@
+---
+title: "day_3"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+
+```
+
+read in data 
+
+```{r}
+data_raw <- read_lines(here::here("data", "day_3_data.txt"))
+
+```
+
+tidy data
+
+```{r}
+data <- data_raw %>%
+  as.tibble() %>%
+  mutate(elf_id = seq(from = 1, to = length(data_raw), by = 1),
+         full_rucksack = value) %>%
+  select(-value) %>%
+  mutate(num_items = str_length(full_rucksack),
+         compart_1 = str_sub(full_rucksack, start = 1, end = num_items/2),
+         compart_2 = str_sub(full_rucksack, start = (num_items/2 + 1), end = -1))
+
+
+```
+
+make a function to find common items
+
+```{r}
+find_errors <- function(compart_1, compart_2){ 
+  # split, find unique values, and sort
+  compart_1_split <-  sort(unique(unlist(str_split(compart_1, ""))))
+  compart_2_split <-  sort(unique(unlist(str_split(compart_2, ""))))
+  
+  # determine if there are errors (0 = no error, 1 = error and need to keep track of repeating item)
+  check <- sum(str_detect(compart_1_split, paste(compart_2_split, collapse = "|")))
+  
+  # if error found (i.e., item in common)
+  if (check > 0) {
+    common_item <- compart_1_split[str_detect(compart_1_split, paste(compart_2_split, collapse = "|"))]
+  }
+  
+  # if no errors found
+  else {
+    common_item <- "none"
+  }
+  
+  # return result
+  return(common_item)
+}
+```
+
+use function 
+
+```{r}
+data_errors <- data %>%
+  mutate(common_items = unlist(purrr::map2(.$compart_1, .$compart_2, find_errors)))
+
+```
+
+create priority key
+
+```{r}
+priority_key <- data.frame(item_id = c(letters, str_to_upper(letters)),
+                           priority_score = seq(from = 1, to = 52, by = 1))
+
+```
+
+join priority key with errors data frame
+
+```{r}
+data_errors_priority <- data_errors %>%
+  left_join(priority_key, by = c("common_items" = "item_id"))
+
+# sum to get total
+sum(data_errors_priority$priority_score)
+```
+
+make groups of three and find common letters between each
+
+```{r}
+data_groups <- data %>% 
+  mutate(elf_group = rep(seq(from = 1, to = (dim(data)[1]/3), by = 1), each = 3))
+
+```
+
+merge strings by group for comparison
+
+```{r}
+# paste function for group merging
+p <- function(v) {
+  Reduce(f=paste, x = v)
+ }
+
+# merge and tidy
+data_groups_merge <- data_groups %>%
+  group_by(elf_group) %>%
+  mutate(group_items_merged = p(full_rucksack)) %>%
+  select(elf_group, group_items_merged) %>%
+  ungroup() %>%
+  distinct()
+```
+
+make a function to find common items
+
+```{r}
+find_badge <- function(group_items_merged){
+  
+  # separate by the space between
+  group_items_list <- unlist(str_split(string = group_items_merged, pattern = " ", n = 3))
+  
+  # split by elf in the group then find unique values and sort
+  first <- sort(unique(unlist(str_split(group_items_list[1], ""))))
+  second <- sort(unique(unlist(str_split(group_items_list[2], ""))))
+  third <- sort(unique(unlist(str_split(group_items_list[3], ""))))
+
+    # determine what's in common between the first and second (0 = no error, 1 = error and need to keep track of repeating item)
+  common_item_start <- first[str_detect(first, paste(second, collapse = "|"))]
+  
+  # determine what's in common between previous and third
+  commont_items_end <- common_item_start[str_detect(common_item_start, paste(third, collapse = "|"))]
+  
+  # return common item for the group
+  return(commont_items_end)
+}
+```
+
+use function 
+
+```{r}
+data_groups_badge <- data_groups_merge %>%
+  mutate(badge_item = unlist(purrr::map(.$group_items_merged, find_badge)))
+
+```
+
+join priority key with errors data frame
+
+```{r}
+data_groups_badge_priority <- data_groups_badge %>%
+  left_join(priority_key, by = c("badge_item" = "item_id"))
+
+# sum to get total
+sum(data_groups_badge_priority$priority_score)
+```

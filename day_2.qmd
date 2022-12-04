@@ -1,0 +1,258 @@
+---
+title: "day_2"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+
+```
+
+read in data
+
+```{r}
+data_raw <- read_lines(here::here("data", "day_2_data.txt"))
+
+```
+
+tidy the data
+
+```{r}
+data <- data_raw %>%
+  as.tibble() %>% 
+  separate(value, c("opponent", "me")) %>%
+  mutate(round_id = seq(from = 1, to = length(data_raw), by = 1)) %>%
+  select(round_id, opponent, me) %>%
+  # don't really need to do this but it helps my brain
+  mutate(me_full = case_when(me == "X" ~ "rock",
+                             me == "Y" ~ "paper",
+                             me == "Z" ~ "scissors"),
+         opponent_full = case_when(opponent == "A" ~ "rock",
+                                   opponent == "B" ~ "paper",
+                                   opponent == "C" ~ "scissors"))
+
+```
+
+make a function to calculate totals
+
+```{r}
+calculate_rps_score <- function(opponent, me) {
+  
+  # define scores for choice
+  score_rock = 1
+  score_paper = 2
+  score_scissors = 3
+  
+  # define scores for outcome
+  score_win = 6
+  score_draw = 3
+  score_loose = 0
+  
+  # if i win
+  if (((me == "rock") & (opponent == "scissors")) | ((me == "scissors") & (opponent == "paper")) | ((me == "paper") & (opponent == "rock"))) {
+    if (me == "rock") {
+      my_score <- score_win + score_rock
+    }
+
+    else if (me == "paper") {
+      my_score <- score_win + score_paper
+    }
+
+    else if (me == "scissors") {
+      my_score <- score_win + score_scissors
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # if it's a draw
+  else if (me == opponent) {
+    if (me == "rock") {
+      my_score <- score_draw + score_rock
+    }
+
+    else if (me == "paper") {
+      my_score <- score_draw + score_paper
+    }
+
+    else if (me == "scissors") {
+      my_score <- score_draw + score_scissors
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # if i loose
+  else {
+    if (me == "rock") {
+      my_score <- score_loose + score_rock
+    }
+
+    else if (me == "paper") {
+      my_score <- score_loose + score_paper
+    }
+
+    else if (me == "scissors") {
+      my_score <- score_loose + score_scissors
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # return my score
+  return(my_score)
+}
+
+# shorter version
+calculate_rps_score_short <- function(opponent, me) {
+  
+  # if i win
+  if (((me == "rock") & (opponent == "scissors")) | ((me == "scissors") & (opponent == "paper")) | ((me == "paper") & (opponent == "rock"))) {
+    return("win")
+  }
+  
+  # if it's a draw
+  else if (me == opponent) {
+    return("draw")
+  }
+  
+  # if i loose
+  else {
+    return("loss")
+  }
+  
+  # return my score
+  return(my_score)
+}
+
+```
+
+use function
+
+```{r}
+data_scores <- data %>%
+  mutate(result = unlist(purrr::map2(.$opponent_full, .$me_full, calculate_rps_score)),
+         result_short = unlist(purrr::map2(.$opponent_full, .$me_full, calculate_rps_score_short)))
+
+```
+
+get total score
+
+```{r}
+# get total score
+sum(data_scores$result)
+```
+
+incorporate new information about me column
+
+```{r}
+data_scores_fix <- data_scores %>%
+  mutate(me_full_fix = case_when(me == "X" ~ "loss",
+                             me == "Y" ~ "draw",
+                             me == "Z" ~ "win"))
+```
+
+make new function
+
+```{r}
+calculate_rps_optimum <- function(opponent, me) {
+  
+  # define scores for choice
+  score_rock = 1
+  score_paper = 2
+  score_scissors = 3
+  
+  # define scores for outcome
+  score_win = 6
+  score_draw = 3
+  score_loose = 0
+  
+  # if i need to win
+  if (me == "win") {
+    
+    if (opponent == "rock") {
+      my_score <- score_win + score_paper
+    }
+
+    else if (opponent == "paper") {
+      my_score <- score_win + score_scissors
+    }
+
+    else if (opponent == "scissors") {
+      my_score <- score_win + score_rock
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # if i need to draw
+  else if (me == "draw") {
+    
+    if (opponent == "rock") {
+      my_score <- score_draw + score_rock
+    }
+
+    else if (opponent == "paper") {
+      my_score <- score_draw + score_paper
+    }
+
+    else if (opponent == "scissors") {
+      my_score <- score_draw + score_scissors
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # if i need to loose
+  else {
+    if (opponent == "rock") {
+      my_score <- score_loose + score_scissors
+    }
+
+    else if (opponent == "paper") {
+      my_score <- score_loose + score_rock
+    }
+
+    else if (opponent == "scissors") {
+      my_score <- score_loose + score_paper
+    }
+    
+    else {
+      my_score <- NA
+    }
+  }
+  
+  # return my score
+  return(my_score)
+}
+```
+
+use second function
+
+```{r}
+data_optimum <-data_scores_fix %>%
+  mutate(result_fix = unlist(purrr::map2(.$opponent_full, .$me_full_fix, calculate_rps_optimum)))
+
+```
+
+get second total score
+
+```{r}
+# get total score
+sum(data_optimum$result_fix)
+```

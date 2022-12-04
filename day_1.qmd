@@ -1,0 +1,88 @@
+---
+title: "day_1"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+
+```
+
+read in data 
+
+```{r}
+data_raw <- read_lines(here::here("data", "day_1_data.txt"))
+```
+
+for loop to go through and group data by elf where empty element represents the next elf
+
+```{r}
+# empty data frame
+data <- data.frame(elf_id = NULL, calories = NULL)
+
+# start iterator
+elf_itt <- 1
+
+# empty calories list
+calories_list_temp <- NULL
+
+# for loop
+for (i in 1:length(data_raw)) {
+  # define elf id
+  elf_id_temp <- paste("elf_", str_pad(as.character(elf_itt), width = 3, pad = 0))
+  
+  # if statement
+  if (str_length(data_raw[i]) > 0) {
+    calories_list_temp <- append(calories_list_temp, data_raw[i], after = length(calories_list_temp))
+  }
+  
+  # when transitioning to new elf
+  else {
+    # gather all temp data
+    data_temp <- data.frame(elf_id = rep(x = elf_id_temp, length(calories_list)),
+                            calories = calories_list_temp)
+    
+    # bind data
+    data <- bind_rows(data, data_temp)
+    
+    # reset calories list
+    calories_list_temp <- NULL
+    
+    # iterate to next elf
+    elf_itt <- elf_itt + 1
+  }
+}
+```
+
+summarize the total calories for each elf
+
+```{r}
+data_summary <- data %>%
+  group_by(elf_id) %>%
+  summarize(total_cals = sum(as.numeric(calories)))
+
+# get the max
+max(data_summary$total_cals)
+
+# get the elf
+data_summary$elf_id[data_summary$total_cals == max(data_summary$total_cals)]
+
+
+```
+
+get total calories for top three elves
+
+```{r}
+data_top_three <- data_summary %>%
+  arrange(data_summary, total_cals) %>%
+  top_n(n = 3)
+
+# sum total calories of top three
+sum(data_top_three$total_cals)
+```
+
