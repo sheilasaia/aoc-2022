@@ -129,5 +129,4 @@ data_find_partial_overlap <- data_find_full_overlap %>%
 
 # calculate sum
 sum(data_find_partial_overlap$partial_overlap_logical)
-# 725 (try #1 but this was too high)
 ```
