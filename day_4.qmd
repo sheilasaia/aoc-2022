@@ -1,0 +1,133 @@
+---
+title: "day_4"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+
+```
+
+read in data
+
+```{r}
+data_raw <- read_lines(here::here("data", "day_4_data.txt"))
+
+```
+
+tidy data
+
+```{r}
+data <- data_raw %>%
+  as.tibble() %>%
+  mutate(pair_id = seq(from = 1, to = length(data_raw), by = 1),
+         assignments = value) %>%
+  select(-value) %>%
+  separate(col = assignments, into = c("elf_1", "elf_2"), sep = ",", remove = FALSE) %>%
+  mutate(elf_1_exp = str_replace(string = elf_1, pattern = "-", replacement = ":"),
+         elf_2_exp = str_replace(string = elf_2, pattern = "-", replacement = ":")) #%>%
+  #separate(col = elf_1_exp, into = c("elf_1_start", "elf_1_end"), sep = ":", remove = FALSE) %>%
+  #separate(col = elf_2_exp, into = c("elf_2_start", "elf_2_end"), sep = ":", remove = FALSE)
+
+```
+
+make a function to determine fully contained overlap between elf 1 and 2 for each pair
+
+```{r}
+find_full_overlap <- function(elf_1_exp, elf_2_exp) {
+  # make into sequence format so can be evaluated and separate into start ane end values
+  elf_1_split <- unlist(str_split(string = elf_1_exp, pattern = ":"))
+  elf_1_start <- as.numeric(elf_1_split[1])
+  elf_1_end <- as.numeric(elf_1_split[2])
+  elf_2_split <- unlist(str_split(string = elf_2_exp, pattern = ":"))
+  elf_2_start <- as.numeric(elf_2_split[1])
+  elf_2_end <- as.numeric(elf_2_split[2])
+  
+  # compare if elf 1 is between elf 2
+  compare_1 <- between(eval(parse(text = elf_2_exp)), left = elf_1_start, right = elf_1_end)
+  compare_1_sum <- sum(compare_1)
+  compare_1_tot_len <- length(compare_1)
+  
+  # compare if elf 2 is between elf 1
+  compare_2 <- between(eval(parse(text = elf_1_exp)), left = elf_2_start, right = elf_2_end)
+  compare_2_sum <- sum(compare_2)
+  compare_2_tot_len <- length(compare_2)
+  
+  # if statement to find overlap
+  # sum has to be equal to total length for them to be fully overlapped
+  if (compare_1_sum == compare_1_tot_len | compare_2_sum == compare_2_tot_len) {
+    return(TRUE)
+  }
+  
+  # no full overlapped for either elf
+  else {
+    return(FALSE)
+  }
+  
+}
+
+```
+
+use the function
+
+```{r}
+data_find_full_overlap <- data %>%
+  mutate(full_overlap_logical = unlist(purrr::map2(.$elf_1_exp, .$elf_2_exp, find_full_overlap)))
+
+# calculate sum
+sum(data_find_full_overlap$full_overlap_logical)
+# 725 (try #1 but this was too high)
+```
+
+make function to find ones that overlap, even if it's a little bit
+
+```{r}
+find_partial_overlap <- function(elf_1_exp, elf_2_exp) {
+  # make into sequence format so can be evaluated and separate into start ane end values
+  elf_1_split <- unlist(str_split(string = elf_1_exp, pattern = ":"))
+  elf_1_start <- as.numeric(elf_1_split[1])
+  elf_1_end <- as.numeric(elf_1_split[2])
+  elf_2_split <- unlist(str_split(string = elf_2_exp, pattern = ":"))
+  elf_2_start <- as.numeric(elf_2_split[1])
+  elf_2_end <- as.numeric(elf_2_split[2])
+  
+  # compare if elf 1 is between elf 2
+  compare_1 <- between(eval(parse(text = elf_2_exp)), left = elf_1_start, right = elf_1_end)
+  compare_1_sum <- sum(compare_1)
+  compare_1_tot_len <- length(compare_1)
+  
+  # compare if elf 2 is between elf 1
+  compare_2 <- between(eval(parse(text = elf_1_exp)), left = elf_2_start, right = elf_2_end)
+  compare_2_sum <- sum(compare_2)
+  compare_2_tot_len <- length(compare_2)
+  
+  # if statement to find overlap
+  # sum has to be at least 1 or more for there to be partial overlap
+  if (compare_1_sum > 0 | compare_2_sum > 0) {
+    return(TRUE)
+  }
+  
+  # no full overlapped for either elf
+  else {
+    return(FALSE)
+  }
+  
+}
+
+```
+
+use the function
+
+```{r}
+data_find_partial_overlap <- data_find_full_overlap %>%
+  mutate(partial_overlap_logical = unlist(purrr::map2(.$elf_1_exp, .$elf_2_exp, find_partial_overlap)))
+
+# calculate sum
+sum(data_find_partial_overlap$partial_overlap_logical)
+# 725 (try #1 but this was too high)
+```
