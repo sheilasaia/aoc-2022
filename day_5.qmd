@@ -1,0 +1,176 @@
+---
+title: "day_4"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+read in data
+
+```{r}
+# rearrangement procedure
+data_raw <- read_lines(here::here("data", "day_5_data.txt"))
+
+# initial stack drawing
+# left most is bottom of stack and right most is top of stack
+# start_stack <- data.frame(row_01 = "ZJG",
+#                           row_02 = "QLRPWFVC",
+#                           row_03 = "FPMCLGR",
+#                           row_04 = "LFBWPHM",
+#                           row_05 = "GCFSVQ",
+#                           row_06 = "WHJZMQTL",
+#                           row_07 = "HFSBV",
+#                           row_08 = "FJZS",
+#                           row_09 = "MCDPFHBT")
+
+# save as list too
+# stack_list <- c("ZJG", "QLRPWFVC", "FPMCLGR", "LFBWPHM", "GCFSVQ", "WHJZMQTL", "HFSBV", "FJZS", "MCDPFHBT")
+```
+
+tidy data
+
+```{r}
+data <- data_raw %>%
+  as.tibble() %>%
+  mutate(procedure = value) %>%
+  select(-value) %>%
+  mutate(tidy1 = str_replace_all(string = procedure, pattern = c("move " = "", "from " = "", "to " = ""))) %>%
+  separate(col = tidy1, into = c("move", "from", "to"), sep = " ")
+```
+
+for loop to step through procedure and move crates w/ reverse order for restack
+
+```{r}
+# stack list
+stack_list <- c("ZJG", "QLRPWFVC", "FPMCLGR", "LFBWPHM", "GCFSVQ", "WHJZMQTL", "HFSBV", "FJZS", "MCDPFHBT")
+
+# for loop
+for (i in 1:dim(data)[1]) {
+  # save move, from, to for each step through data
+  move_temp <- as.numeric(data$move[i])
+  from_temp <- as.numeric(data$from[i])
+  to_temp <- as.numeric(data$to[i])
+  
+  # if only one move
+  if (move_temp == 1) {
+  # get temp from and to stacks
+  from_stack_temp <- stack_list[from_temp]
+  to_stack_temp <- stack_list[to_temp]
+  
+  # get create to move
+  crate_temp <- str_sub(string = from_stack_temp, start = -1, end = -(move_temp))
+  
+  # move crate
+  new_from_stack_temp <-str_sub(string = from_stack_temp, start = 1, end = -(move_temp + 1))
+  new_to_stack_temp <- paste0(to_stack_temp, crate_temp)
+  
+  # update stack list
+  stack_list <- stack_list
+  stack_list[from_temp] <- new_from_stack_temp
+  stack_list[to_temp] <- new_to_stack_temp
+  }
+  
+  # if more than one move
+  else {
+      # get temp from and to stacks
+      from_stack_temp <- stack_list[from_temp]
+      to_stack_temp <- stack_list[to_temp]
+
+      # get create to move
+      crate_temp <- str_sub(string = from_stack_temp, start = -(move_temp), end = -1)
+      
+      # reverse order
+      crate_temp_rev <- str_flatten(rev(unlist(str_split(crate_temp, "", n = move_temp))))
+
+      # move crate
+      new_from_stack_temp <-str_sub(string = from_stack_temp, start = 1, end = -(move_temp + 1))
+      new_to_stack_temp <- paste0(to_stack_temp, crate_temp_rev)
+      
+      # update stack list
+      stack_list <- stack_list
+      stack_list[from_temp] <- new_from_stack_temp
+      stack_list[to_temp] <- new_to_stack_temp
+  }
+}
+```
+
+print stack list and get top letters
+
+```{r}
+#stack_list
+
+# get top letters
+str_flatten(str_sub(stack_list, -1, -1))
+# answer: "WSFTMRHPP"
+```
+
+for loop to step through procedure and move crates w/out (!) reverse order for restack
+
+```{r}
+# stack list
+stack_list <- c("ZJG", "QLRPWFVC", "FPMCLGR", "LFBWPHM", "GCFSVQ", "WHJZMQTL", "HFSBV", "FJZS", "MCDPFHBT")
+
+# for loop
+for (i in 1:dim(data)[1]) {
+  # save move, from, to for each step through data
+  move_temp <- as.numeric(data$move[i])
+  from_temp <- as.numeric(data$from[i])
+  to_temp <- as.numeric(data$to[i])
+  
+  # if only one move
+  if (move_temp == 1) {
+  # get temp from and to stacks
+  from_stack_temp <- stack_list[from_temp]
+  to_stack_temp <- stack_list[to_temp]
+  
+  # get create to move
+  crate_temp <- str_sub(string = from_stack_temp, start = -1, end = -(move_temp))
+  
+  # move crate
+  new_from_stack_temp <- str_sub(string = from_stack_temp, start = 1, end = -(move_temp + 1))
+  new_to_stack_temp <- paste0(to_stack_temp, crate_temp)
+  
+  # update stack list
+  stack_list <- stack_list
+  stack_list[from_temp] <- new_from_stack_temp
+  stack_list[to_temp] <- new_to_stack_temp
+  }
+  
+  # if more than one move
+  else {
+      # get temp from and to stacks
+      from_stack_temp <- stack_list[from_temp]
+      to_stack_temp <- stack_list[to_temp]
+
+      # get create to move
+      crate_temp <- str_sub(string = from_stack_temp, start = -(move_temp), end = -1)
+      
+      # move crate
+      new_from_stack_temp <- str_sub(string = from_stack_temp, start = 1, end = -(move_temp + 1))
+      new_to_stack_temp <- paste0(to_stack_temp, crate_temp)
+      
+      # update stack list
+      stack_list <- stack_list
+      stack_list[from_temp] <- new_from_stack_temp
+      stack_list[to_temp] <- new_to_stack_temp
+  }
+}
+```
+
+print stack list and get top letters
+
+```{r}
+#stack_list
+
+# get top letters
+str_flatten(str_sub(stack_list, -1, -1))
+# answer: "GSLCMFBRP"
+```
+
