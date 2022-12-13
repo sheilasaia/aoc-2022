@@ -1,0 +1,143 @@
+---
+title: "day_6"
+author: "sheila"
+format: html
+editor: visual
+---
+
+load libraries
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+read in data
+
+```{r}
+# datastream buffer
+data_raw <- read_lines(here::here("data", "day_6_data.txt"))
+
+# length of data
+str_length(data_raw)
+# 4095
+```
+
+make a function with a for loop to find 4 unique characters in a row (i.e., the start-of-package marker)
+needs to restart if a repeat letter is found
+can be rolling!
+
+```{r}
+
+find_package_marker <- function(data_string) {
+  # initiate iterators
+  start_step <- 1
+  end_step <- 4
+  
+  for (i in 1:(str_length(data_string) - 4)) {
+    # look at first step
+    string_temp <- str_sub(string = data_string, start = start_step, end = end_step)
+    
+    # break into individual values
+    split_string_temp <- c(str_split_fixed(string = string_temp, pattern = "", n = 4))
+    
+    # count unique values
+    unique_length_temp <- length(unique(split_string_temp))
+    
+    # if not 4 unique letters
+    if(unique_length_temp < 4) {
+      # reset iterators
+      start_step <- start_step + 1
+      end_step <- end_step + 1
+    }
+    
+    # else return end step position
+    else {
+      #print position
+      return(end_step)
+    }
+  }
+}
+```
+
+testing
+
+```{r}
+# testing
+find_package_marker(data_string = "mjqjpqmgbljsphdztnvjfqwrcgsmlb") #7
+find_package_marker(data_string = "bvwbjplbgvbhsrlpgdmjqwftvncz") #5
+find_package_marker(data_string = "nppdvjthqldpwncqszvftbrmjlhg") #6
+find_package_marker(data_string = "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg") #10
+find_package_marker(data_string = "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw") #11
+# yay!
+```
+
+try it on puzzle input now
+
+```{r}
+find_package_marker(data_string = data_raw)
+# position 1544 is the end of the first consecutive and unique four letter sequence
+
+# look at output to check
+str_sub(string = data_raw, start = (1544 - 10), end = (1544 + 10))
+str_sub(string = data_raw, start = 1541, end = 1544)
+```
+
+make a function with a for loop to find 14 unique characters in a row (i.e., the start-of-message marker)
+needs to restart if a repeat letter is found
+can be rolling!
+
+```{r}
+
+find_message_marker <- function(data_string) {
+  # initiate iterators
+  start_step <- 1
+  end_step <- 14
+  
+  for (i in 1:(str_length(data_string) - 14)) {
+    # look at first step
+    string_temp <- str_sub(string = data_string, start = start_step, end = end_step)
+    
+    # break into individual values
+    split_string_temp <- c(str_split_fixed(string = string_temp, pattern = "", n = 14))
+    
+    # count unique values
+    unique_length_temp <- length(unique(split_string_temp))
+    
+    # if not 4 unique letters
+    if(unique_length_temp < 14) {
+      # reset iterators
+      start_step <- start_step + 1
+      end_step <- end_step + 1
+    }
+    
+    # else return end step position
+    else {
+      #print position
+      return(end_step)
+    }
+  }
+}
+```
+
+testing
+
+```{r}
+# testing
+find_message_marker(data_string = "mjqjpqmgbljsphdztnvjfqwrcgsmlb") #19
+find_message_marker(data_string = "bvwbjplbgvbhsrlpgdmjqwftvncz") #23
+find_message_marker(data_string = "nppdvjthqldpwncqszvftbrmjlhg") #23
+find_message_marker(data_string = "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg") #29
+find_message_marker(data_string = "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw") #26
+# 
+```
+
+try it on input data now
+
+```{r}
+find_message_marker(data_string = data_raw)
+# position 2145 is the end of the first consecutive and unique fourteen letter sequence
+
+# look at output to check
+str_sub(string = data_raw, start = 2145 - 13, end = 2145)
+```
